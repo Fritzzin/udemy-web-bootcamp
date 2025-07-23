@@ -1,2 +1,3 @@
-# udemy_web_bootcamp
-Tasks and small projects related to one of the udemy courses I'm following.
+# Dev Bootcamp tasks (Udemy Course) 
+
+Repo to save my progress on the tasks, projects and general notes related to [this](https://www.udemy.com/course/the-web-developer-bootcamp) Udemy course I'm following.
