@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>HTML 5 Boilerplate</title>
+  </head>
+  <body>
+    <h1> Random </h1>
+    <h2> Result: <%= randomNum %> </h2>
+
+    <br>
+
+    <% if(randomNum % 2 === 0) { %>
+      <h2> That's an even number </h2> 
+    <% } else { %>
+      <h2> That's an odd number </h2> 
+    <% } %>
+    <p> Using logic operators </p>
+
+    <br>
+
+    <h2> That's an <%= (randomNum % 2 === 0) ? 'EVEN' : 'ODD' %> number </h2>
+    <p> Using ternary operator </p>
+  </body>
+</html>
