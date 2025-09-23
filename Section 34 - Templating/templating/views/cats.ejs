@@ -4,9 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Subreddit <%= subreddit %> </title>
+    <title>All Cats</title>
   </head>
   <body>
-    <h1> Welcome to <%= subreddit %> subreddit </h1>
+   <h1>All the cats</h1> 
+    
+    <ul>
+      <% for(let cat of cats) { %>
+        <li> <%= cat %> </li>
+       <% } %>
+    </ul>
+
   </body>
 </html>
