@@ -8,7 +8,7 @@
 </head>
 
 <body>
-    <h1>Comment id: <%= id%>
+    <h1>Comment id: <%= id %>
     </h1>
     <div>
         <h3>
@@ -20,6 +20,11 @@
     </div>
 
     <a href="/comments">Back</a>
+    <a href="/comments/<%=id%>/edit">Edit</a>
+
+    <form method="post" action="/comments/<%=id%>?_method=DELETE">
+        <button type="submit">Delete</button>
+    </form>
 </body>
 
 </html>

@@ -3,15 +3,17 @@ const app = express();
 const PORT = 3000;
 const path = require("path");
 const { v4: uuid } = require("uuid");
+const methodOverride = require("method-override");
 
 // Express Settings:
 // Tell express how to parse the data coming from the post request
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(methodOverride("_method"));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-const comments = [
+let comments = [
   {
     id: uuid(),
     username: "Todd",
@@ -30,6 +32,7 @@ const comments = [
 ];
 
 app.get("/comments", (req, res) => {
+  // console.log(comments);
   res.render("comments/index", { comments });
 });
 
@@ -46,8 +49,34 @@ app.post("/comments", (req, res) => {
 
 app.get("/comments/:id", (req, res) => {
   const { id } = req.params;
-  const comment = comments.find((comment) => comment.id === id);
+  const comment = comments.find((c) => c.id === id);
   res.render("comments/show", { ...comment });
+});
+
+app.patch("/comments/:id", (req, res) => {
+  const { id } = req.params;
+  const { comment: newComment } = req.body;
+  const foundComment = comments.find((c) => c.id === id);
+
+  if (foundComment) {
+    foundComment.comment = newComment;
+    res.redirect("/comments");
+  } else {
+    res.send(`Couldn't find comment with the ID ${id}`);
+  }
+});
+
+app.get("/comments/:id/edit", (req, res) => {
+  const { id } = req.params;
+  const comment = comments.find((c) => c.id === id);
+  // console.log(comment);
+  res.render("comments/edit", { comment });
+});
+
+app.delete("/comments/:id", (req, res) => {
+  const { id } = req.params;
+  comments = comments.filter(c => c.id !== id);
+  res.redirect("/comments");
 });
 
 app.get("/tacos", (req, res) => {
@@ -55,7 +84,7 @@ app.get("/tacos", (req, res) => {
 });
 
 app.post("/tacos", (req, res) => {
-  console.log(req.body);
+  // console.log(req.body);
   const { meat, quantity } = req.body;
   res.send(`Here's your ${quantity} ${meat} taco(s)`);
 });
