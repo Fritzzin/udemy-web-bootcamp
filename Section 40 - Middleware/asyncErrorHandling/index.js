@@ -22,16 +22,27 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 
-app.get("/products", async (req, res) => {
-  const { category } = req.query;
-  if (category) {
-    const products = await Product.find({ category: category });
-    res.render("products/index", { products, category });
-  } else {
-    const products = await Product.find({});
-    res.render("products/index", { products, category: "All" });
-  }
-});
+// A function that returns another function with a "catch".
+// Just so we don't have to redo all boilerplate of try/catch
+function wrapAsync(fn) {
+  return function (req, res, next) {
+    fn(req, res, next).catch((e) => next(e));
+  };
+}
+
+app.get(
+  "/products",
+  wrapAsync(async (req, res) => {
+    const { category } = req.query;
+    if (category) {
+      const products = await Product.find({ category: category });
+      res.render("products/index", { products, category });
+    } else {
+      const products = await Product.find({});
+      res.render("products/index", { products, category: "All" });
+    }
+  })
+);
 
 const categories = ["fruit", "vegetable", "dairy"];
 app.get("/products/new", (req, res) => {
@@ -39,54 +50,70 @@ app.get("/products/new", (req, res) => {
   res.render("products/new", { categories });
 });
 
-app.post("/products", async (req, res, next) => {
-  try {
+app.post(
+  "/products",
+  wrapAsync(async (req, res, next) => {
     console.log(req.body);
     const newProduct = new Product(req.body);
     await newProduct.save();
     res.redirect(`/products/${newProduct._id}`);
-  } catch (e) {
-    next(e);
-  }
-});
+  })
+);
+app.get(
+  "/products/:id",
+  wrapAsync(async (req, res, next) => {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+    if (!product) {
+      // Return will stop the execution of render
+      return next(new AppError("Product Not Found", 404));
+    }
+    res.render("products/details", { product });
+  })
+);
 
-app.get("/products/:id", async (req, res, next) => {
-  const { id } = req.params;
-  const product = await Product.findById(id);
-  if (!product) {
-    // Return will stop the execution of render
-    return next(new AppError("Product Not Found", 404));
-  }
-  res.render("products/details", { product });
+app.get(
+  "/products/:id/edit",
+  wrapAsync(async (req, res) => {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+    res.render("products/edit", { product, categories });
+  })
+);
 
-  // if (product) {
-  //   res.render("products/details", { product });
-  // } else {
-  //   res.send("Error. Couldn't find a product with this ID");
-  // }
-});
+app.put(
+  "/products/:id",
+  wrapAsync(async (req, res) => {
+    const { id } = req.params;
+    const product = await Product.findByIdAndUpdate(id, req.body, {
+      runValidator: true,
+      new: true,
+    });
+    res.redirect(`/products/${product._id}`);
+    // console.log(req.body);
+    // res.send("PUT REQUEST");
+  })
+);
 
-app.get("/products/:id/edit", async (req, res) => {
-  const { id } = req.params;
-  const product = await Product.findById(id);
-  res.render("products/edit", { product, categories });
-});
+app.delete(
+  "/products/:id",
+  wrapAsync(async (req, res) => {
+    const { id } = req.params;
+    await Product.findByIdAndDelete(id);
+    res.redirect("/products");
+  })
+);
 
-app.put("/products/:id", async (req, res) => {
-  const { id } = req.params;
-  const product = await Product.findByIdAndUpdate(id, req.body, {
-    runValidator: true,
-    new: true,
-  });
-  res.redirect(`/products/${product._id}`);
-  // console.log(req.body);
-  // res.send("PUT REQUEST");
-});
+const handleValidationError = err => {
+  console.dir(err);
+  return err;
+}
 
-app.delete("/products/:id", async (req, res) => {
-  const { id } = req.params;
-  await Product.findByIdAndDelete(id);
-  res.redirect("/products");
+app.use((err, req, res, next) => {
+  console.log(err.name);
+  if (err.name === "ValidationError") err = handleValidationError(err);
+  if (err.name === "CastError") err = handleValidationError(err);
+  next(err);
 });
 
 app.use((err, req, res, next) => {
