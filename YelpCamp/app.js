@@ -5,6 +5,8 @@ const Campground = require("./models/Campground");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const catchAsync = require("./utils/catchAsync");
+const ExpressError = require("./utils/ExpressError");
+const { campgroundSchema } = require("./schemas");
 
 mongoose.connect("mongodb://localhost:27017/yelp-camp");
 const db = mongoose.connection;
@@ -21,6 +23,19 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
+
+// Middleware
+const validateCampground = (req, res, next) => {
+  const { error } = campgroundSchema.validate(req.body);
+  if (error) {
+    const errorMessage = error.details.map((el) => el.message).join(",");
+    throw new ExpressError(errorMessage, 400);
+  } else {
+    next();
+  }
+};
+
+// ----- ROUTES -----
 
 app.get("/", (req, res) => {
   res.render("home");
@@ -40,6 +55,7 @@ app.get("/campgrounds/new", (req, res) => {
 
 app.post(
   "/campgrounds",
+  validateCampground,
   catchAsync(async (req, res) => {
     const campground = new Campground(req.body.campground);
     await campground.save();
@@ -68,6 +84,7 @@ app.get(
 
 app.put(
   "/campgrounds/:id",
+  validateCampground,
   catchAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await Campground.findByIdAndUpdate(id, {
@@ -87,9 +104,17 @@ app.delete(
   })
 );
 
+// 404
+// Only runs if none of the above urls have been hit
+app.all(/(.*)/, (req, res, next) => {
+  next(new ExpressError("Page not Found", 404));
+});
+
 // Error handler
 app.use((err, req, res, next) => {
-  res.send("Oh boy, something went wrong...");
+  const { statusCode = 500 } = err;
+  if (!err.message) err.message = "Oh no, something went wrong!";
+  res.status(statusCode).render("error", { err });
 });
 
 app.listen(PORT, () => {
